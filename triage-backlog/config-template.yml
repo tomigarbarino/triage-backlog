@@ -1,0 +1,74 @@
+# .claude/triage.yml — config de triage-backlog para esta app.
+# La arma "/triage-backlog setup". Rutas relativas a cada repo; no inventes rutas: leelas del repo.
+
+app: nombre-de-la-app
+idioma_tickets: es             # idioma del ticket funcional (el del equipo o cliente)
+
+repos:
+  front:
+    github: org/repo-front      # o la URL del remoto si no es GitHub
+    local: ""                   # opcional: carpeta del checkout local
+    rama_viva: main
+    carpetas:                   # dónde mirar primero
+      pantallas: src/app
+      componentes: src/components
+      cliente_api: src/lib/api
+  back:
+    github: org/repo-back       # puede ser el mismo repo que el front (monorepo)
+    rama_viva: main
+    carpetas:
+      endpoints: src/routes
+      servicios: src/services
+      datos: migrations
+  # otros:                      # servicios extra (workers, agentes, landing)
+  #   - nombre: worker
+  #     github: org/repo-worker
+  #     carpetas: { entrada: worker/src }
+
+fuentes:                        # de dónde salen los reportes (también se pueden pegar)
+  - tipo: github_issues
+    repo: org/repo-front
+    labels: todas               # "todas" (se clasifican en el triage) o una lista: [bug, enhancement]
+  # - tipo: jira | linear       # se lee con el conector del agente o un export
+  #   proyecto: ""
+  #   filtro: ""
+  # - tipo: canal               # slack | teams; se lee con el conector del agente
+  #   nombre: ""
+  # - tipo: planilla            # export de un formulario de reportes
+  #   ubicacion: ""
+  # - tipo: app                 # tabla o pantalla de reportes de la propia app (solo lectura)
+  #   ubicacion: ""
+
+tracker:
+  tipo: github                  # github | jira | linear | ninguno (se entrega un archivo para importar)
+  repo_issues: org/repo-front   # o proyecto de Jira/Linear
+  project: ""                   # opcional: tablero o Project
+  labels:
+    bug: bug
+    feature: enhancement
+    mejora: enhancement
+    prioridad: [P0, P1, P2, P3]
+  escala_equipo: ""             # opcional: escala propia y su mapeo, ej. "alta=P1, media=P2, baja=P3"
+
+aprobacion:
+  dev_a_cargo: "rol o nombre de pila, sin mail ni teléfono"
+  producto: ""                  # opcional: quién aprueba el alcance de las features
+  canal: ""                     # dónde se le manda el backlog (ej. chat del equipo)
+
+# Reglas propias que pisan las tablas generales de prioridad.
+prioridad:
+  flujos_criticos:              # si se rompe alguno de estos, mínimo P1
+    - login
+    - flujo principal del cliente
+  features_p1:                  # pedidos que suben a P1 (las features nunca son P0)
+    - destraba una venta, renovación o compromiso con fecha
+  siempre_p0:
+    - fuga de datos entre clientes o roles
+  notas: ""
+
+salida:
+  backlog: docs/backlog/        # dónde se guarda cada backlog (backlog-AAAA-MM-DD.md)
+
+entornos:
+  prod: ""
+  staging: ""
