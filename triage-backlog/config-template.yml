@@ -1,20 +1,24 @@
 # .claude/triage.yml — config de triage-backlog para esta app.
 # La arma "/triage-backlog setup". Rutas relativas a cada repo; no inventes rutas: leelas del repo.
+# Este archivo se commitea: sin secretos, credenciales ni datos personales.
+# Opcionales: `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `fuentes` (`[]` si los reportes siempre se pegan en el chat), `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `limites`, `salida`, `entornos`.
 
 app: nombre-de-la-app
 idioma_tickets: es             # idioma del ticket funcional (el del equipo o cliente)
 
+# El "repo ancla" es donde está abierto el agente: ahí viven este archivo, la skill y salida.backlog.
 repos:
   front:
     github: org/repo-front      # o la URL del remoto si no es GitHub
-    local: ""                   # opcional: carpeta del checkout local
-    rama_viva: main
+    local: ""                   # carpeta del checkout; vacío = el repo ancla
+    rama_viva: main             # rama desde la que se deploya (main, develop, release/x); "hecho" significa que ya está acá
     carpetas:                   # dónde mirar primero
       pantallas: src/app
       componentes: src/components
       cliente_api: src/lib/api
   back:
     github: org/repo-back       # puede ser el mismo repo que el front (monorepo)
+    local: ""                   # obligatorio si no es el repo ancla; si falta o la carpeta no existe, el setup lo pide y no adivina
     rama_viva: main
     carpetas:
       endpoints: src/routes
@@ -23,52 +27,62 @@ repos:
   # otros:                      # servicios extra (workers, agentes, landing)
   #   - nombre: worker
   #     github: org/repo-worker
+  #     local: ""               # obligatorio si no es el repo ancla
+  #     rama_viva: main
   #     carpetas: { entrada: worker/src }
 
-fuentes:                        # de dónde salen los reportes (también se pueden pegar)
+fuentes:                        # de dónde salen los reportes; `[]` si solo se pegan en el chat
   - tipo: github_issues
     repo: org/repo-front
-    labels: todas               # "todas" (se clasifican en el triage) o una lista: [bug, enhancement]
+    labels: todas               # "todas" (se clasifican en el triage) o una lista: [bug, enhancement] = cualquiera de estas
   # - tipo: jira | linear       # se lee con el conector del agente o un export
   #   proyecto: ""
   #   filtro: ""
   # - tipo: canal               # slack | teams; se lee con el conector del agente
-  #   nombre: ""
+  #   nombre: ""                # nombre del canal, no webhooks ni tokens
   # - tipo: planilla            # export de un formulario de reportes
-  #   ubicacion: ""
-  # - tipo: app                 # tabla o pantalla de reportes de la propia app (solo lectura)
-  #   ubicacion: ""
+  #   ubicacion: pedir          # ruta fija del export, o "pedir" (se pide en cada corrida)
+  # - tipo: app                 # tabla o pantalla de reportes de la propia app, solo lectura
+  #   ubicacion: ""             # URL de la pantalla, o nombre de la tabla o endpoint
+  #   acceso: navegador         # navegador | sql | api, con un usuario de solo lectura que dé el equipo; nunca la service key
 
 tracker:
   tipo: github                  # github | jira | linear | ninguno (se entrega un archivo para importar)
-  repo_issues: org/repo-front   # o proyecto de Jira/Linear
-  project: ""                   # opcional: tablero o Project
-  labels:
+  repo_issues: org/repo-front   # o proyecto de Jira/Linear; los tickets se crean siempre acá (si tocan otro repo, se anota en el cuerpo)
+  labels:                       # label de tipo en el tracker
     bug: bug
     feature: enhancement
     mejora: enhancement
-    prioridad: [P0, P1, P2, P3]
-  escala_equipo: ""             # opcional: escala propia y su mapeo, ej. "alta=P1, media=P2, baja=P3"
+    deuda: tech-debt
+    epica: epic
 
 aprobacion:
   dev_a_cargo: "rol o nombre de pila, sin mail ni teléfono"
   producto: ""                  # opcional: quién aprueba el alcance de las features
-  canal: ""                     # dónde se le manda el backlog (ej. chat del equipo)
+  canal: ""                     # opcional: nombre del canal donde se manda el backlog; no webhooks ni tokens
 
 # Reglas propias que pisan las tablas generales de prioridad.
 prioridad:
+  escala:                       # P0–P3 es la escala interna; el valor es la label que se aplica en el tracker.
+    P0: P0                      # Si el equipo usa otra (ej. "prioridad: alta"), poné esa; dos niveles pueden compartir label.
+    P1: P1
+    P2: P2
+    P3: P3
   flujos_criticos:              # si se rompe alguno de estos, mínimo P1
     - login
     - flujo principal del cliente
   features_p1:                  # pedidos que suben a P1 (las features nunca son P0)
-    - destraba una venta, renovación o compromiso con fecha
+    - "destraba una venta, renovación o compromiso con fecha"
   siempre_p0:
     - fuga de datos entre clientes o roles
   notas: ""
 
-salida:
-  backlog: docs/backlog/        # dónde se guarda cada backlog (backlog-AAAA-MM-DD.md)
+limites:
+  max_items_por_corrida: 60     # con más ítems, el triage propone un recorte y corre por tandas
 
-entornos:
-  prod: ""
-  staging: ""
+salida:
+  backlog: docs/backlog/        # dónde se guarda cada backlog (backlog-AAAA-MM-DD.md); si falta, docs/backlog/
+
+entornos:                       # URL base por entorno, solo para chequeos GET de solo lectura (páginas públicas, health)
+  prod: ""                      # y para nombrarlos en el backlog; nunca connection strings, keys ni tokens
+  staging: ""                   # staging sirve para reproducir con cuentas de prueba; a prod solo GET sin sesión
