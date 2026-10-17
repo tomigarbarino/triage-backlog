@@ -1,56 +1,59 @@
 # triage-backlog
 
-Una skill de Claude Code que convierte reportes de bugs y pedidos de features en un backlog priorizado, revisando el código de verdad. También sirve para re-triagear un backlog viejo: te dice qué sigue pendiente, qué ya está resuelto y qué tiene un PR esperando review.
+**De reportes sueltos a un backlog que el equipo puede decidir, con evidencia del código.**
 
-Funciona con cualquier app. La primera vez corrés `/triage-backlog setup`, contestás unas preguntas y queda conectada a tu proyecto.
+Una skill de Claude Code para relevar bugs y pedidos de features, revisar qué existe en el front y el back, y proponer prioridades. También sirve para ordenar un backlog viejo: distingue lo pendiente, lo ya implementado, lo obsoleto y lo que tiene un PR esperando review.
+
+**[Ver un backlog completo con datos ficticios](docs/ejemplo-backlog.md) · [Ver mi trabajo y contactarme](https://tomas-garbarino.vercel.app/)**
+
+## Qué problema resuelve
+
+Un issue abierto no siempre significa trabajo pendiente. Puede estar resuelto en la rama principal, depender de una decisión de producto o tener un arreglo listo que nadie revisó. A la vez, los pedidos nuevos pueden llegar por un tracker, un chat o un formulario.
+
+La skill cruza esos reportes con el código y el historial para que la persona a cargo pueda decidir qué hacer primero. **El resultado inicial es un borrador: no modifica código ni cambia el tracker sin aprobación.**
+
+## Entrada → trabajo → resultado
+
+| Entrada | Qué revisa | Qué entrega |
+| --- | --- | --- |
+| Un bug reportado | Flujo, causa probable, evidencia `archivo:línea` y confianza. | Propuesta de arreglo, prioridad, riesgo y criterios de aceptación. |
+| Un pedido de feature | Problema de fondo, código reutilizable, capas afectadas y dependencias. | Ticket funcional y propuesta técnica para decidir el alcance. |
+| Un backlog existente | Estado contra la rama revisada y PRs abiertos. | Qué sigue pendiente, qué está parcial y qué conviene revisar o cerrar. |
+
+Las prioridades P0–P3 son sugeridas y tienen una justificación. Bugs y features usan criterios distintos. Las preguntas sobre producción o decisiones de producto quedan visibles, sin inventar respuestas.
 
 ```mermaid
 flowchart LR
-  A[Reportes<br/>issues, Slack, Teams,<br/>formulario, pegados] --> B[Clasificar<br/>bug, feature, mejora]
-  B --> C[Revisar el código<br/>front y back,<br/>archivo:línea]
-  C --> D[Priorizar<br/>P0 a P3, con el porqué]
-  D --> E[Backlog en borrador]
-  E --> F{Aprueba el dev}
-  F -->|sí| G[Tickets, labels,<br/>cierres, review de PRs]
-  F -->|no| E
+  A[Reportes o issues] --> B[Clasificar y agrupar]
+  B --> C[Revisar código y PRs]
+  C --> D[Backlog con evidencia]
+  D --> E{Decide el equipo}
+  E -->|Aprueba| F[Aplicar cambios al tracker]
+  E -->|Pide cambios| D
 ```
 
-## Qué hace
+## Mirá una salida antes de instalar
 
-- **Junta los reportes** de donde estén: issues de GitHub, Jira o Linear, un canal de Slack o Teams, un formulario, la pantalla de reportes de tu app, o texto pegado en el chat.
-- **Clasifica** cada uno: bug, feature, mejora, deuda o épica. Agrupa duplicados.
-- **Revisa el código del front y del back.** Para un bug, marca la causa probable con `archivo:línea` y un nivel de confianza. Para una feature, dónde entraría, qué se puede reusar y cuánto esfuerzo lleva.
-- **Verifica el estado real** de cada ítem contra el código, no contra lo que dicen los comentarios: pendiente, parcial, hecho, PR listo u obsoleto.
-- **Prioriza** de P0 a P3, con una línea de por qué. Bugs y features tienen criterios distintos (una feature nunca es P0).
-- **Arma un backlog en borrador**: lo más importante arriba, las preguntas que bloquean, tablas por prioridad, lo que hay que decidir, lo que se puede cerrar, y el detalle completo de P0 y P1, con el ticket funcional (historia de usuario para las features).
-- **Espera tu aprobación.** Recién ahí crea tickets, aplica prioridades y cierra lo resuelto. Si hay PRs listos, ofrece revisarlos.
+El [ejemplo público](docs/ejemplo-backlog.md) usa una app inventada, **Acme Tareas**, y datos ficticios. Incluye:
 
-Tres reglas fijas:
+- un bug de permisos cuyo arreglo tiene un PR pendiente de review;
+- issues ya implementados que siguen abiertos;
+- una exportación bloqueada por decidir qué puede ver cada rol;
+- tablas de prioridades, detalle de P0/P1 y decisiones pendientes.
 
-1. **Nada se crea, cierra ni mergea sin OK.** El backlog es una propuesta; la prioridad final es del dev a cargo.
-2. **El código manda.** El estado sale del código y del historial de git. Si un comentario dice "ya está mergeado" y no es cierto, lo marca.
-3. **Lo que no ve, lo pregunta.** No inventa el estado de producción (migraciones aplicadas, configuración, datos reales): lo deja como pregunta arriba del backlog.
-
-## Un caso real
-
-La primera corrida fue sobre el backlog de un producto en producción: 64 issues abiertos y 7 PRs. Tardó unos 10 minutos, con 7 subagentes revisando el código en paralelo. Encontró:
-
-- **4 fallas de seguridad graves**, con el arreglo ya escrito en PRs que nadie había revisado.
-- **12 issues ya resueltos** en la rama principal, que seguían abiertos porque los comentarios decían otra cosa.
-- **Un riesgo en producción:** código deployado que dependía de migraciones que quizás no estaban aplicadas.
-- **2 issues bloqueados** por una decisión de producto que nadie había tomado.
-
-Leyendo los issues uno por uno, casi nada de eso aparece. Hay un ejemplo de backlog con datos ficticios en [docs/ejemplo-backlog.md](docs/ejemplo-backlog.md).
+Sirve para evaluar el formato y el razonamiento esperado. No es evidencia de incidentes, clientes ni resultados de un producto real.
 
 ## Qué necesitás
 
-- [Claude Code](https://claude.com/claude-code), abierto en el repo de tu app (con acceso al código del front y del back).
-- Para GitHub: el [GitHub CLI](https://cli.github.com) (`gh`) con sesión iniciada.
-- Para Jira, Linear, Slack o Teams: el conector correspondiente en Claude, o un export de los reportes.
+- **Claude Code**, con acceso autorizado al código del proyecto. Esta es una skill de instrucciones y plantillas, no una aplicación ni un servicio alojado.
+- **GitHub CLI (`gh`)** con acceso de lectura si los reportes o PRs están en GitHub.
+- Para Jira, Linear, Slack o Teams: el conector disponible en tu agente o un export de los reportes. También podés pegar el texto en el chat.
 
 ## Instalación
 
-**Para todo el equipo** (recomendado): la skill queda en el repo de tu app y la usa cualquiera que abra Claude Code ahí.
+Cloná este repo y copiá la carpeta de la skill al proyecto donde la vas a usar. Estos comandos parten de la carpeta donde querés descargarla:
+
+**macOS / Linux — para el proyecto:**
 
 ```bash
 git clone https://github.com/tomigarbarino/triage-backlog.git
@@ -58,80 +61,67 @@ mkdir -p <tu-repo>/.claude/skills
 cp -r triage-backlog/triage-backlog <tu-repo>/.claude/skills/
 ```
 
-**Solo para vos**, en todos tus proyectos:
-
-```bash
-mkdir -p ~/.claude/skills
-cp -r triage-backlog/triage-backlog ~/.claude/skills/
-```
-
-En Windows (PowerShell), el equivalente es:
+**Windows / PowerShell — para el proyecto:**
 
 ```powershell
-Copy-Item -Recurse triage-backlog\triage-backlog "$env:USERPROFILE\.claude\skills\"
+git clone https://github.com/tomigarbarino/triage-backlog.git
+New-Item -ItemType Directory -Force "<tu-repo>/.claude/skills" | Out-Null
+Copy-Item -Recurse "./triage-backlog/triage-backlog" "<tu-repo>/.claude/skills/"
 ```
 
-## Uso
+Reemplazá `<tu-repo>` por la ruta de tu proyecto. Si ya existe una instalación, revisala antes de copiar encima.
 
-**1. Setup, una vez por proyecto.** En Claude Code, dentro del repo:
+Para usarla en todos tus proyectos, el destino es `~/.claude/skills/` en macOS/Linux o `$env:USERPROFILE/.claude/skills/` en PowerShell. No necesitás `npm install` para esta skill.
 
-```
+## Primera corrida
+
+Abrí Claude Code en el repo de tu aplicación:
+
+```text
 /triage-backlog setup
 ```
 
-Lee el repo (stack, carpetas, rama principal, tracker) y te pregunta en un solo mensaje, con respuestas sugeridas:
+El setup detecta el stack y pregunta de dónde salen los reportes, dónde vive el tracker, quién aprueba, cuáles son los flujos críticos y en qué idioma entregar los tickets. Prueba las fuentes disponibles y, con tu OK, guarda `.claude/triage.yml`.
 
-- de dónde salen los reportes;
-- dónde viven los tickets: GitHub, Jira, Linear o ninguno (en ese caso te deja un archivo para importar);
-- quién aprueba el backlog y quién aprueba el alcance de las features;
-- cuáles son los flujos críticos y qué es siempre P0, y si tu equipo usa otra escala (alta/media/baja);
-- en qué idioma van los tickets y dónde guardar el backlog.
+Después:
 
-Prueba las fuentes leyendo los últimos reportes y deja todo en `.claude/triage.yml`. Commiteá `.claude/` para que el equipo use la misma config.
-
-**2. Triage, cuando quieras:**
-
-```
+```text
 /triage-backlog
 ```
 
-O pedidos como:
+Podés pedir, por ejemplo:
 
-- "relevá los bugs y pedidos abiertos y armame el backlog"
-- "revisá el backlog y decime qué ya está resuelto"
-- "triageá este bug: <reporte pegado>"
-- "cuánto cuesta esta feature y dónde entra: <pedido>"
+- «revisá el backlog y decime qué ya está resuelto»;
+- «relevá los bugs y pedidos abiertos y proponé prioridades»;
+- «analizá este bug: <reporte pegado>»;
+- «qué implica esta feature y dónde entraría: <pedido>».
 
-**3. Decidir.** Abrís el backlog y marcás cada ítem: aprobar, cambiar prioridad, pedir más info, cerrar o descartar. Con eso, la skill aplica lo aprobado.
+El backlog deja constancia de la rama y el commit revisados. Antes de crear tickets, aplicar labels o cerrar issues, la persona a cargo decide por ítem. Las revisiones de PRs se proponen por separado; no se mergea ni se aplican migraciones automáticamente.
 
-## Archivos
+## Qué podés evaluar en este repo
 
-| Archivo | Qué es |
-|---|---|
-| [triage-backlog/SKILL.md](triage-backlog/SKILL.md) | La skill: setup, los 8 pasos del triage y las trampas |
-| [triage-backlog/config-template.yml](triage-backlog/config-template.yml) | Plantilla de `.claude/triage.yml`, comentada |
-| [triage-backlog/config-examples.md](triage-backlog/config-examples.md) | Dos configs de ejemplo: monorepo y front/back separados |
-| [triage-backlog/backlog-template.md](triage-backlog/backlog-template.md) | Formato del backlog que entrega |
-| [docs/ejemplo-backlog.md](docs/ejemplo-backlog.md) | Un backlog de ejemplo, con datos ficticios |
+| Archivo | Qué muestra |
+| --- | --- |
+| [Skill](triage-backlog/SKILL.md) | Setup, análisis, evidencia, prioridades y aprobación. |
+| [Plantilla de configuración](triage-backlog/config-template.yml) | Adaptación a fuentes, repos, tracker y reglas de cada equipo. |
+| [Ejemplos de configuración](triage-backlog/config-examples.md) | Monorepo y front/back separados. |
+| [Plantilla de backlog](triage-backlog/backlog-template.md) | Entregable esperado y decisiones que quedan para el equipo. |
+| [Ejemplo ficticio](docs/ejemplo-backlog.md) | Una salida completa que se puede leer sin instalar nada. |
 
-## ¿Ya existe algo así?
+## Alcance y límites
 
-Hay varias skills de triage para agentes, y cada una cubre una parte:
+- El estado del código no confirma por sí solo qué está desplegado, qué migraciones se aplicaron ni cómo están los datos reales.
+- El diagnóstico puede ser una hipótesis: la salida debe indicar confianza y qué falta verificar. Se revisan especialmente los P0/P1 y los cierres propuestos.
+- Un backlog grande puede consumir muchos tokens. Como referencia declarada por el autor, una corrida utilizó unos 350 mil tokens en subagentes; no es un costo fijo ni un presupuesto garantizado.
+- No publica datos personales ni credenciales en los ejemplos o tickets. El equipo debe revisar qué configuración y reportes conviene versionar.
+- La skill está escrita en español; el idioma de los tickets se configura. No hay una suite de tests ejecutables en este repo: la revisión se hace sobre las instrucciones, las plantillas y la evidencia de cada corrida.
 
-- [skillmds `bug-triage`](https://www.skillsdirectory.com/skills/skillmds-bug-triage) lee issues con `gh`, puntúa impacto, frecuencia y costo, y agrupa duplicados.
-- [bmad `gh-triage`](https://skillselion.com/skills/bmad-code-org/bmad-utility-skills/bmad-os-gh-triage) prioriza por severidad, agrupa por temas y procesa en lotes paralelos.
-- [mattpocock `triage`](https://claudemarketplaces.com/skills/vinvcn/mattpocock-skills-zh-cn/triage) mueve issues por un flujo de labels.
-- Una [charla de DevConf.IN 2026](https://pretalx.devconf.info/devconf-in-2026/talk/FV3PRW/) presenta una GitHub Action que analiza issues con el código como contexto y sugiere arreglos.
+## Adaptarlo a tu equipo
 
-Lo que suma esta: verifica contra el código si cada ítem sigue vigente (y detecta lo que ya está hecho o tiene PR), trata bugs y features con criterios distintos y entrega tickets funcionales, se conecta a cada proyecto con un setup de preguntas, y separa siempre la propuesta de la decisión humana.
+El punto de partida es un backlog concreto, los repos a revisar y quién toma la decisión. Se puede ajustar la escala de prioridades, las fuentes y el formato del ticket sin convertir cada reporte en una implementación automática.
 
-## Límites
-
-- No ve producción. Lo que depende de ella queda como pregunta.
-- Los subagentes baratos se pueden equivocar; por eso la skill verifica a mano todo lo que queda P0, P1 o "para cerrar". Igual, revisá la evidencia antes de aprobar.
-- En backlogs grandes consume tokens: el caso de arriba usó unos 350 mil en subagentes.
-- Está escrita en español. Los tickets pueden salir en el idioma que elijas en el setup.
+**[Ver otros proyectos y conversar sobre tu flujo](https://tomas-garbarino.vercel.app/)**
 
 ## Licencia
 
-[MIT](LICENSE)
+[MIT](LICENSE).
