@@ -46,7 +46,7 @@ Sirve para evaluar el formato y el razonamiento esperado. No es evidencia de inc
 ## Qué necesitás
 
 - **Claude Code**, con acceso autorizado al código del proyecto. Esta es una skill de instrucciones y plantillas, no una aplicación ni un servicio alojado.
-- **GitHub CLI (`gh`)** con acceso de lectura si los reportes o PRs están en GitHub.
+- **GitHub CLI (`gh`)** con acceso de lectura para el triage, y de escritura en issues y labels (y en PRs si se mergea) para `/triage-backlog aplicar`. En Windows, los comandos de la skill están pensados para Git Bash; si usás PowerShell 5.1, la nota al inicio de [comandos.md](triage-backlog/references/comandos.md) dice qué cambiar.
 - Para Jira, Linear, Slack o Teams: el conector disponible en tu agente o un export de los reportes. También podés pegar el texto en el chat.
 
 ## Instalación
@@ -71,7 +71,7 @@ Copy-Item -Recurse "./triage-backlog/triage-backlog" "<tu-repo>/.claude/skills/"
 
 Reemplazá `<tu-repo>` por la ruta de tu proyecto. Si ya existe una instalación, revisala antes de copiar encima.
 
-Para usarla en todos tus proyectos, el destino es `~/.claude/skills/` en macOS/Linux o `$env:USERPROFILE/.claude/skills/` en PowerShell. No necesitás `npm install` para esta skill.
+Para usarla en todos tus proyectos, el destino es `~/.claude/skills/` en macOS/Linux o `$env:USERPROFILE/.claude/skills/` en PowerShell. No necesitás `npm install` para esta skill. Si tu repo no versiona backlogs, la carpeta de salida (`docs/backlog/` por defecto, con su subcarpeta `trabajo/` de exports JSON) tiene que quedar ignorada entera por git; el setup lo chequea y te propone cómo.
 
 ## Primera corrida
 
@@ -96,7 +96,7 @@ Podés pedir, por ejemplo:
 - «analizá este bug: <reporte pegado>»;
 - «qué implica esta feature y dónde entraría: <pedido>».
 
-El backlog deja constancia de la rama y el commit revisados. Si hay más de 60 ítems (`limites.max_items_por_corrida`), propone un recorte y corre por tandas. Antes de crear tickets, aplicar labels o cerrar issues, la persona a cargo decide por ítem en la tabla **Decisiones** del backlog, y después:
+El backlog deja constancia de la rama y el commit revisados, de las otras ramas desplegadas que verificó (`ramas_extra`, por ejemplo una `release/*` que recibe backports) y de los chequeos GET a producción. Si hay más ítems que `limites.max_items_por_corrida` (60 por defecto, con un 10 % de margen), el setup propone subir el tope, acotar las labels de la fuente o partir en tandas con un criterio estable que queda escrito en `trabajo/tandas-<fecha>.json`, no en la memoria del chat. Antes de crear tickets, aplicar labels o cerrar issues, la persona a cargo decide por ítem en la tabla **Decisiones** del backlog, y después:
 
 ```text
 /triage-backlog aplicar

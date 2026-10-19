@@ -1,17 +1,26 @@
 # .claude/triage.yml — config de triage-backlog para esta app.
 # La arma "/triage-backlog setup". Rutas relativas a cada repo; no inventes rutas: leelas del repo.
 # Este archivo se commitea: sin secretos, credenciales ni datos personales.
-# Opcionales: `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `fuentes` (`[]` si los reportes siempre se pegan en el chat), `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `limites`, `salida`, `entornos`.
+# Los comentarios describen reglas y por qué se eligió cada valor. Nada de conteos de issues, fechas ni "existe / no existe" de labels: eso vence mañana y va en el encabezado del backlog. La única foto del setup es `generado`.
+# Opcionales: `generado`, `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `repos.<capa>.ramas_extra`, `fuentes` (`[]` si los reportes siempre se pegan en el chat), `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `limites`, `salida`, `entornos` (`prod`, `staging` y `chequeos_get`; sin `prod` no hay chequeo de producción y se dice en el encabezado).
+
+generado:                       # lo actualiza el setup cada vez que corre; no anotes estado del tracker en ningún otro lado
+  fecha: ""
+  commit: ""
 
 app: nombre-de-la-app
 idioma_tickets: es             # idioma del ticket funcional (el del equipo o cliente)
 
-# El "repo ancla" es donde está abierto el agente: ahí viven este archivo, la skill y salida.backlog.
+# El "repo ancla" es donde está abierto el agente: ahí viven este archivo y salida.backlog (y la skill, si se instaló en el proyecto y no en ~/.claude/skills/).
 repos:
   front:
     github: org/repo-front      # o la URL del remoto si no es GitHub
     local: ""                   # carpeta del checkout; vacío = el repo ancla
     rama_viva: main             # rama desde la que se deploya (main, develop, release/x); "hecho" significa que ya está acá
+    ramas_extra: []             # otras ramas desplegadas de larga vida (release/x, hotfix/x). "hecho" se verifica contra rama_viva; si el ítem cae en el criterio de una rama extra, el estado es "hecho en <rama_viva>; backport pendiente en <rama>" y no se cierra hasta estar en las dos.
+    # ramas_extra:
+    #   - rama: release/edicion-x
+    #     criterio: "issues con label edicion-x"   # qué ítems le aplican: label, área o texto del issue
     carpetas:                   # dónde mirar primero
       pantallas: src/app
       componentes: src/components
@@ -20,21 +29,27 @@ repos:
     github: org/repo-back       # puede ser el mismo repo que el front (monorepo)
     local: ""                   # obligatorio si no es el repo ancla; si falta o la carpeta no existe, el setup lo pide y no adivina
     rama_viva: main
+    ramas_extra: []             # ídem front
     carpetas:
       endpoints: src/routes
       servicios: src/services
       datos: migrations
-  # otros:                      # servicios extra (workers, agentes, landing)
+  # otros:                      # servicios extra (workers, agentes, landing). Las claves de back (`endpoints`, `servicios`, `datos`) más `entrada`; todas son carpetas, nunca un archivo.
   #   - nombre: worker
   #     github: org/repo-worker
   #     local: ""               # obligatorio si no es el repo ancla
   #     rama_viva: main
-  #     carpetas: { entrada: worker/src }
+  #     ramas_extra: []
+  #     carpetas:
+  #       entrada: worker/src           # por dónde arranca el servicio; el archivo puntual (index.ts) va en este comentario, no como valor
+  #       endpoints: worker/src/routes  # handlers HTTP, colas o crons
+  #       servicios: worker/src/services
+  #       datos: worker/migrations      # solo si tiene datos propios; si no, omitir la clave
 
 fuentes:                        # de dónde salen los reportes; `[]` si solo se pegan en el chat
   - tipo: github_issues
     repo: org/repo-front
-    labels: todas               # "todas" (se clasifican en el triage) o una lista: [bug, enhancement] = cualquiera de estas
+    labels: todas               # "todas" (se clasifican en el triage) o una lista: [bug, enhancement] = cualquiera de estas. Si el tracker supera limites.max_items_por_corrida, el setup propone acotar acá; no anotes conteos
   # - tipo: jira | linear       # se lee con el conector del agente o un export
   #   proyecto: ""
   #   filtro: ""
@@ -49,7 +64,7 @@ fuentes:                        # de dónde salen los reportes; `[]` si solo se 
 tracker:
   tipo: github                  # github | jira | linear | ninguno (se entrega un archivo para importar)
   repo_issues: org/repo-front   # o proyecto de Jira/Linear; los tickets se crean siempre acá (si tocan otro repo, se anota en el cuerpo)
-  labels:                       # label de tipo en el tracker
+  labels:                       # label de tipo en el tracker; las que falten se crean con OK (setup paso 5); no anotes acá cuáles existen
     bug: bug
     feature: enhancement
     mejora: enhancement
@@ -78,11 +93,18 @@ prioridad:
   notas: ""
 
 limites:
-  max_items_por_corrida: 60     # con más ítems, el triage propone un recorte y corre por tandas
+  max_items_por_corrida: 60     # regla del equipo, no el conteo de hoy; con más ítems (+10 % de margen) el triage parte en tandas con criterio estable (trabajo/tandas-<fecha>.json)
 
 salida:
-  backlog: docs/backlog/        # dónde se guarda cada backlog (backlog-AAAA-MM-DD.md); si falta, docs/backlog/
+  backlog: docs/backlog/        # dónde se guarda cada backlog (backlog-AAAA-MM-DD.md); si falta, docs/backlog/. También guarda trabajo/ con exports del tracker (JSON) y las tablas de los lotes:
+                                # si no se versiona, tiene que estar ignorada entera (git check-ignore -v sobre un .md y un trabajo/*.json), nunca a medias
 
-entornos:                       # URL base por entorno, solo para chequeos GET de solo lectura (páginas públicas, health)
-  prod: ""                      # y para nombrarlos en el backlog; nunca connection strings, keys ni tokens
+entornos:                       # solo para chequeos GET de solo lectura sin sesión; nunca connection strings, keys ni tokens
+  prod: ""                      # URL base de la app en producción; también para nombrarla en el backlog
   staging: ""                   # staging sirve para reproducir con cuentas de prueba; a prod solo GET sin sesión
+  chequeos_get: []              # otras URLs públicas que deciden un estado: worker, proveedor de auth, health. Solo GET; si no confirma ni descarta, va a "Preguntas que bloquean" como "no concluyente: <qué se vio>"
+  # chequeos_get:
+  #   - nombre: worker
+  #     url: ""                 # si no está en el repo, el setup la pregunta o la deja vacía con nota
+  #   - nombre: auth
+  #     url: ""                 # endpoint público de configuración del proveedor de auth

@@ -1,6 +1,6 @@
 # Ejemplos de triage.yml
 
-Puntos de partida para dos formas comunes de repo. Antes de guardarlos, confirmá las rutas leyendo el código actual. Opcionales: `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `fuentes` (`fuentes: []` si los reportes siempre se pegan en el chat), `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `limites`, `salida`, `entornos`. El resto es obligatorio.
+Puntos de partida para dos formas comunes de repo. Antes de guardarlos, confirmá las rutas leyendo el código actual. Opcionales: `generado`, `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `repos.<capa>.ramas_extra`, `fuentes` (`fuentes: []` si los reportes siempre se pegan en el chat), `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `limites`, `salida`, `entornos` (`prod`, `staging` y `chequeos_get`; sin `prod` no hay chequeo de producción y se dice en el encabezado). El resto es obligatorio. Los comentarios de la config describen reglas, no conteos ni fechas.
 
 ## Monorepo (front y back en el mismo repo)
 
@@ -19,7 +19,13 @@ repos:
   back:
     github: mi-org/mi-app
     rama_viva: main
+    ramas_extra: [{ rama: release/cliente-x, criterio: "issues con label cliente-x" }]   # segunda línea desplegada: hecho en main + backport; en un monorepo, repetila en cada capa que comparte el repo
     carpetas: { endpoints: app/api, servicios: lib, datos: supabase/migrations }
+  otros:
+    - nombre: worker
+      github: mi-org/mi-app
+      rama_viva: main
+      carpetas: { entrada: worker/src, endpoints: worker/src/routes, servicios: worker/src/services }   # las claves de back más `entrada`, todas carpetas
 tracker:
   tipo: github
   repo_issues: mi-org/mi-app
@@ -32,7 +38,10 @@ prioridad:
   features_p1: ["destraba una venta, renovación o compromiso con fecha"]
   siempre_p0: [un usuario ve datos de otro cliente]
 salida:
-  backlog: docs/backlog/
+  backlog: docs/backlog/                 # ignorada entera por git si el equipo no versiona backlogs
+entornos:
+  prod: https://mi-app.example.com
+  chequeos_get: [{ nombre: worker, url: https://worker.mi-app.example.com/health }]
 ```
 
 ## Front y back en repos separados, reportes en un canal

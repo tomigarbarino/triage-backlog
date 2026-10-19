@@ -2,7 +2,9 @@
 
 **Estado:** borrador para aprobación de <dev a cargo>
 **Fuentes:** <cantidad> reportes o issues (<fuentes leídas>) y <n> PRs, hasta <fecha>; <total> issues abiertos en el tracker. Código revisado sobre: front `<repo@commit>` · back `<repo@commit>`.
-**Modo:** reportes nuevos / re-triage <· tanda N de M: issues #a–#b, si aplica>
+**Otras ramas verificadas:** <`release/x@commit` (criterio: <qué ítems le aplican>); quitá la línea si no hay `ramas_extra`>
+**Producción:** <verificado el <fecha>: <URL> → <código>; si el GET no decide nada, «no concluyente» y la pregunta va abajo, en «Preguntas que bloquean»; sin `entornos.prod`: «sin URL de producción en la config: no se chequeó»>
+**Modo:** reportes nuevos / re-triage <· tanda N de M según `trabajo/tandas-<fecha>.json`: <criterio o rango #a–#b>, si aplica>
 
 ## Lo más importante
 
@@ -15,13 +17,14 @@
 
 **Estado de producción** (el agente no lo puede ver):
 - <ej. ¿la migración X está aplicada en producción?>
+- <ej. no concluyente: `<URL>` → <código>; <qué se vio y qué lo decidiría>>
 
 **Decisiones de producto:**
 - <ej. ¿quién puede generar contenido pago?>
 
 ## Resumen
 
-Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (en la rama viva), **PR listo** (#N) u **obsoleto**; una dependencia va acá: "pendiente; depende de #N". Actual: la prioridad que el issue ya tenía (`—` si ninguna). Orden dentro de cada prioridad: PR listo, bugs, quick wins.
+Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (en la rama viva), **hecho en <rama_viva>; backport pendiente en <rama>** (falta en una rama extra), **PR listo** (#N) u **obsoleto**; una dependencia va acá: "pendiente; depende de #N". Actual: la prioridad que el issue ya tenía (`—` si ninguna). Orden dentro de cada prioridad: PR listo, bugs, quick wins.
 
 ### P0 — ya, fuera del sprint
 
@@ -60,6 +63,8 @@ Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (
 | ID | Qué pasa (con evidencia) | Acción sugerida |
 |---|---|---|
 | #N | <ya está en la rama viva: `archivo:línea`, commit `abc123`> | <probar X y cerrar> |
+| R<n> | <duplicado de #N (cerrado); el arreglo sigue en la rama viva: `archivo:línea`, commit `abc123`> | <responder al reporte: resuelto desde <versión o fecha>> |
+| #N | <hecho en `main` (`archivo:línea`, commit `abc123`); backport pendiente en `release/x` (`git merge-base --is-ancestor` → no)> | <no cerrar: backportear y verificar en las dos ramas> |
 
 **Orden sugerido:** <R1 → R3 → R2, y por qué en una línea; los bloqueantes van antes>
 
@@ -120,7 +125,7 @@ Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (
 
 ## Decisiones
 
-Completá la columna **Decisión** de esta tabla (es la única fuente de verdad): **aprobado**, **cambiar prioridad a ___**, **pedir más info**, **cerrar** o **descartar**. Con lo aprobado, la skill aplica labels, cierres, comentarios en duplicados, épicas y la revisión de los PR listos, siempre mostrando antes la lista de acciones y con OK en el chat. Mergear pide OK aparte, por PR. Las migraciones en producción no las corre la skill: deja escrito cuáles son y en qué orden. **Aplicado** lo completa la skill (link o fecha); las filas con Aplicado lleno no se vuelven a aplicar.
+Completá la columna **Decisión** de esta tabla (es la única fuente de verdad): **aprobado**, **cambiar prioridad a ___**, **pedir más info**, **cerrar** o **descartar**. Con lo aprobado, la skill crea los tickets de los reportes nuevos y aplica labels, cierres, comentarios (duplicados y pedidos de info), épicas y la revisión de los PR listos, siempre mostrando antes la lista de acciones y con OK en el chat. Mergear pide OK aparte, por PR. Las migraciones en producción no las corre la skill: deja escrito cuáles son y en qué orden. **Aplicado** lo completa la skill (link o fecha); las filas con Aplicado lleno no se vuelven a aplicar.
 
 | ID | Título | Decisión | Quién y cuándo | Aplicado | Notas |
 |---|---|---|---|---|---|
