@@ -3,7 +3,7 @@
 > Ejemplo con datos ficticios. "Acme Tareas" es una app inventada de gestión de tareas para equipos (Next.js + Supabase en un monorepo). En un repo o tracker público, el #41 iría como "seguridad: ver canal privado", sin evidencia ni pasos.
 
 **Estado:** borrador para aprobación de la líder técnica
-**Fuentes:** 15 issues abiertos de `acme/tareas` (todos, con o sin label) y 2 PRs abiertos, hasta 2026-10-15; 15 issues abiertos en el tracker. Código revisado sobre: front y back `acme/tareas@4f2a91c` (monorepo, `main`).
+**Fuentes:** 15 issues abiertos de `acme/tareas` (todos, con o sin label) y 2 PRs abiertos, hasta 2026-10-15 18:00 (-03:00); 15 issues abiertos en el tracker. Código revisado sobre: front y back `acme/tareas@4f2a91c` (monorepo, `main`).
 **Producción:** verificado el 2026-10-15: `https://tareas.acme.example` → 200 (solo prueba que responde); la migración de #27 no se ve por GET (ver «Preguntas que bloquean»)
 **Modo:** re-triage
 
@@ -23,7 +23,7 @@
 
 ## Resumen
 
-Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (en la rama viva), **hecho en <rama_viva>; backport pendiente en <rama>** (falta en una rama extra), **PR listo** (#N) u **obsoleto**; una dependencia va acá: "pendiente; depende de #N". Actual: la prioridad que el issue ya tenía (`—` si ninguna). Orden dentro de cada prioridad: PR listo, bugs, quick wins.
+Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (en la rama viva), **hecho en <rama_viva>; backport pendiente en <rama>** (falta en una rama extra), **PR listo** (#N) u **obsoleto**; una dependencia va acá: "pendiente; depende de #N". Actual: la prioridad que el issue ya tenía (`—` si ninguna). Orden dentro de cada prioridad: PR listo, bugs, quick wins. ID: `#N` (issue de GitHub).
 
 ### P0 — ya, fuera del sprint
 
@@ -51,7 +51,7 @@ Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (
 | ID | Tipo | Título | Estado | Esfuerzo | Confianza | Actual |
 |---|---|---|---|---|---|---|
 | #31 | mejora | Modo oscuro en el tablero | pendiente | M | alta | — |
-| #39 | deuda | Partir `lib/tasks.ts` (2.400 líneas) | pendiente | L | alta | — |
+| #39 | deuda | Partir `lib/tasks.ts` | pendiente (`git show origin/main:lib/tasks.ts \| wc -l` → 2400) | L | alta | — |
 
 ### A definir (falta una decisión de producto)
 
@@ -61,7 +61,7 @@ Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (
 
 ### Sumar a issues existentes (duplicados)
 
-| ID | Issue existente | Qué agregar |
+| ID | Ítem existente | Qué agregar |
 |---|---|---|
 | #40 | #38 | Un cliente más pide el recordatorio; sumar el pedido a #38 y cerrar #40 como duplicado |
 
@@ -69,17 +69,17 @@ Estado: **pendiente**, **parcial** (parte ya está en la rama viva), **hecho** (
 
 | ID | Qué pasa (con evidencia) | Acción sugerida |
 |---|---|---|
-| #12 | El filtro por responsable ya está: `components/TaskFilters.tsx:88 AssigneeFilter`, commit `c71e2d0` en `main` | Probar y cerrar |
-| #18 | El contador de tareas vencidas ya se actualiza al cambiar la fecha: `hooks/useTaskCounters.ts:31 useTaskCounters`, commit `9be03d1` | Probar y cerrar |
-| #22 | La pantalla de tareas archivadas ya existe: `app/projects/[id]/archive/page.tsx:1 ArchivePage`, commit `9be03d1` | Probar y cerrar |
-| #27 | Archivar tareas ya está en `main` (`lib/tasks.ts:1310 archiveTask`); el comentario del issue dice "falta mergear", pero el commit `9be03d1` está en `main` | Verificar la migración en producción y cerrar |
-| #30 | Restaurar una tarea archivada ya está: `lib/tasks.ts:1342 restoreTask`, commit `9be03d1` | Probar y cerrar |
+| #12 | El filtro por responsable ya está: `components/TaskFilters.tsx:88 AssigneeFilter`, commit `c71e2d0` (2026-09-22) en `main` | Probar y cerrar |
+| #18 | El contador de tareas vencidas ya se actualiza al cambiar la fecha: `hooks/useTaskCounters.ts:31 useTaskCounters`, commit `9be03d1` (2026-10-03) | Probar y cerrar |
+| #22 | La pantalla de tareas archivadas ya existe: `app/projects/[id]/archive/page.tsx:1 ArchivePage`, commit `9be03d1` (2026-10-03) | Probar y cerrar |
+| #27 | Archivar tareas ya está en `main` (`lib/tasks.ts:1310 archiveTask`); el comentario del issue dice "falta mergear", pero el commit `9be03d1` (2026-10-03) está en `main` | Verificar la migración en producción y cerrar |
+| #30 | Restaurar una tarea archivada ya está: `lib/tasks.ts:1342 restoreTask`, commit `9be03d1` (2026-10-03) | Probar y cerrar |
 
 **Orden sugerido:** review y merge de #52 (el arreglo de #41 ya está en PR) → confirmar la migración de #27 → #44 → cerrar los 5 resueltos → #38.
 
 ---
 
-## Detalle de P0 y P1
+## Detalle
 
 ### #41 — Un invitado ve tareas de otros proyectos de la empresa (re-triage)
 
@@ -89,7 +89,7 @@ La búsqueda global devuelve tareas de toda la empresa sin filtrar por los proye
 
 - **Evidencia:** `app/api/search/route.ts:42 GET` filtra solo por `company_id`; la policy de `tasks` permite leer por empresa (`supabase/migrations/20260810_tasks_rls.sql:15 tasks_select_company`). Sigue presente en `4f2a91c`.
 - **Causa o propuesta:** filtrar por membresía en el endpoint y en la policy.  ·  **Riesgo:** la policy la usan también el tablero y los reportes.  ·  **Tests a agregar:** un invitado busca y solo ve sus proyectos.
-- **PR:** #52 — checks verde, review no, migración sí (`supabase/migrations/20261012_tasks_rls_membership.sql`), cubre total, también ajusta el índice de búsqueda, deja afuera nada.
+- **PR:** #52 — checks verde, review no, migración sí (`supabase/migrations/20261012_tasks_rls_membership.sql`), cubre total, también ajusta el índice de búsqueda, deja afuera: ninguno.
 - **Falta:** review, merge y aplicar la migración.
 
 ### #44 — Al mover una tarea entre columnas a veces se duplica (re-triage)

@@ -2,7 +2,8 @@
 # La arma "/triage-backlog setup". Rutas relativas a cada repo; no inventes rutas: leelas del repo.
 # Este archivo se commitea: sin secretos, credenciales ni datos personales.
 # Los comentarios describen reglas y por qué se eligió cada valor. Nada de conteos de issues, fechas ni "existe / no existe" de labels: eso vence mañana y va en el encabezado del backlog. La única foto del setup es `generado`.
-# Opcionales: `generado`, `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `repos.<capa>.ramas_extra`, `fuentes` (`[]` si los reportes siempre se pegan en el chat), `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `limites`, `salida`, `entornos` (`prod`, `staging` y `chequeos_get`; sin `prod` no hay chequeo de producción y se dice en el encabezado).
+# Opcionales: `generado`, `repos.otros`, `repos.<capa>.local` (vacío = el repo ancla; obligatorio si esa capa vive en otro repo), `repos.<capa>.ramas_extra`, `repos.<capa>.remoto` (en lugar de `github` fuera de GitHub), `fuentes` (`[]` si los reportes siempre se pegan en el chat), `fuentes[].ventana_inicial`, `tracker.sitio`, `tracker.prioridad_en`, `tracker.transiciones`, `tracker.labels.descartado`, `tracker.labels.espera`, `aprobacion.producto`, `aprobacion.canal`, `prioridad.features_p1`, `prioridad.notas`, `prioridad.peso_por_plan`, `limites` (`max_items_por_corrida`, `dias_sin_respuesta`, `dias_sin_actividad`, `backlog_vivo`), `salida` (`backlog`, `detalle`, `idioma`), `entornos` (`prod`, `staging` y `chequeos_get`; sin `prod` no hay chequeo de producción y se dice en el encabezado), `seguridad`, `versiones`, `planificacion`. Sin ellas, el flujo es el común.
+# Casos especiales (Jira, GitLab, sin código, open source, mobile…), con su snippet: references/adaptaciones.md.
 
 generado:                       # lo actualiza el setup cada vez que corre; no anotes estado del tracker en ningún otro lado
   fecha: ""
@@ -11,10 +12,11 @@ generado:                       # lo actualiza el setup cada vez que corre; no a
 app: nombre-de-la-app
 idioma_tickets: es             # idioma del ticket funcional (el del equipo o cliente)
 
-# El "repo ancla" es donde está abierto el agente: ahí viven este archivo y salida.backlog (y la skill, si se instaló en el proyecto y no en ~/.claude/skills/).
+# El "repo ancla" es donde está abierto el agente: ahí viven este archivo y salida.backlog (y la skill, si se instaló en el proyecto y no en ~/.claude/skills/). Puede ser una carpeta de trabajo propia (adaptaciones, sección 2).
+# Las capas son opcionales y de nombre libre (front, back, app, lib): al menos una, o `repos: {}` si no hay código accesible. `carpetas` acepta claves extra (codigo, tests, nativo_ios, nativo_android).
 repos:
   front:
-    github: org/repo-front      # o la URL del remoto si no es GitHub
+    github: org/repo-front      # en otro hosting (GitLab, Bitbucket), `remoto:` con la URL completa en lugar de `github:`
     local: ""                   # carpeta del checkout; vacío = el repo ancla
     rama_viva: main             # rama desde la que se deploya (main, develop, release/x); "hecho" significa que ya está acá
     ramas_extra: []             # otras ramas desplegadas de larga vida (release/x, hotfix/x). "hecho" se verifica contra rama_viva; si el ítem cae en el criterio de una rama extra, el estado es "hecho en <rama_viva>; backport pendiente en <rama>" y no se cierra hasta estar en las dos.
@@ -50,11 +52,15 @@ fuentes:                        # de dónde salen los reportes; `[]` si solo se 
   - tipo: github_issues
     repo: org/repo-front
     labels: todas               # "todas" (se clasifican en el triage) o una lista: [bug, enhancement] = cualquiera de estas. Si el tracker supera limites.max_items_por_corrida, el setup propone acotar acá; no anotes conteos
-  # - tipo: jira | linear       # se lee con el conector del agente o un export
+  # - tipo: gitlab_issues       # con glab o la API; token de solo lectura en GITLAB_TOKEN, nunca acá
+  #   repo: grupo/subgrupo/app
+  #   labels: todas
+  # - tipo: jira | linear       # se lee con el conector del agente o un export (solo los campos de la lista liviana)
   #   proyecto: ""
-  #   filtro: ""
+  #   filtro: ""                # en Jira, JQL; fija el alcance de la corrida
   # - tipo: canal               # slack | teams; se lee con el conector del agente
   #   nombre: ""                # nombre del canal, no webhooks ni tokens
+  #   ventana_inicial: 30d      # solo la primera corrida, sin backlog anterior; después, desde el `hasta` anterior
   # - tipo: planilla            # export de un formulario de reportes
   #   ubicacion: pedir          # ruta fija del export, o "pedir" (se pide en cada corrida)
   # - tipo: app                 # tabla o pantalla de reportes de la propia app, solo lectura
@@ -62,14 +68,21 @@ fuentes:                        # de dónde salen los reportes; `[]` si solo se 
   #   acceso: navegador         # navegador | sql | api, con un usuario de solo lectura que dé el equipo; nunca la service key
 
 tracker:
-  tipo: github                  # github | jira | linear | ninguno (se entrega un archivo para importar)
-  repo_issues: org/repo-front   # o proyecto de Jira/Linear; los tickets se crean siempre acá (si tocan otro repo, se anota en el cuerpo)
-  labels:                       # label de tipo en el tracker; las que falten se crean con OK (setup paso 5); no anotes acá cuáles existen
+  tipo: github                  # github | gitlab | jira | linear | ninguno (el ticket se entrega en markdown)
+  # sitio: ""                   # host del tracker si no es github.com (gitlab.example.com, jira.example.com); sin tokens
+  repo_issues: org/repo-front   # o clave de proyecto de Jira/Linear, o ruta de GitLab con subgrupos; los tickets se crean siempre acá (si tocan otro repo, se anota en el cuerpo)
+  labels:                       # label de tipo en el tracker (en Jira, tipo de issue: Bug, Story, Task, Epic); las que falten se crean con OK (setup paso 5); `{}` = no se crean ni se aplican labels de tipo. No anotes acá cuáles existen
     bug: bug
     feature: enhancement
     mejora: enhancement
     deuda: tech-debt
     epica: epic
+    # descartado: wontfix       # opcional: label que acompaña un cierre por descarte (GitLab no tiene motivo de cierre)
+    # espera: needs-info        # opcional: label que marca «pedir más info»; se aplica al pedir info y cuenta para dias_sin_respuesta
+  # prioridad_en: label         # label | campo. Jira y Linear: `campo` (prioridad.escala mapea a Priority de Jira o a Urgent/High/Medium/Low de Linear; el setup no crea nada)
+  # transiciones:               # Jira: estado al que se transiciona al cerrar; si falta, se pregunta al aplicar
+  #   hecho: Done
+  #   descartado: "Won't Do"
 
 aprobacion:
   dev_a_cargo: "rol o nombre de pila, sin mail ni teléfono"
@@ -78,7 +91,7 @@ aprobacion:
 
 # Reglas propias que pisan las tablas generales de prioridad.
 prioridad:
-  escala:                       # P0–P3 es la escala interna; el valor es la label que se aplica en el tracker.
+  escala:                       # P0–P3 es la escala interna; el valor es la label que se aplica en el tracker (o el valor del campo, con tracker.prioridad_en: campo). `escala: {}` = sin labels de prioridad: va en la primera línea del cuerpo.
     P0: P0                      # Si el equipo usa otra (ej. "prioridad: alta"), poné esa; dos niveles pueden compartir label.
     P1: P1
     P2: P2
@@ -91,13 +104,19 @@ prioridad:
   siempre_p0:
     - fuga de datos entre clientes o roles
   notas: ""
+  # peso_por_plan: {}           # ej. { enterprise: 3, anual: 2, mensual: 1 }: demanda ponderada = suma de pesos de los clientes distintos que lo piden; sin montos
 
 limites:
   max_items_por_corrida: 60     # regla del equipo, no el conteo de hoy; con más ítems (+10 % de margen) el triage parte en tandas con criterio estable (trabajo/tandas-<fecha>.json)
+  # dias_sin_respuesta: 30      # un "pedir más info" sin respuesta del autor en N días se propone cerrar (se puede reabrir); sin la clave, no vence
+  # dias_sin_actividad: 730     # backlog gigante: un pendiente sin actividad humana en N días se propone descartar (adaptaciones, sección 7)
+  # backlog_vivo: 100           # tope de issues vivos al consolidar las tandas de una limpieza (adaptaciones, sección 7)
 
 salida:
   backlog: docs/backlog/        # dónde se guarda cada backlog (backlog-AAAA-MM-DD.md); si falta, docs/backlog/. También guarda trabajo/ con exports del tracker (JSON) y las tablas de los lotes:
                                 # si no se versiona, tiene que estar ignorada entera (git check-ignore -v sobre un .md y un trabajo/*.json), nunca a medias
+  # detalle: [P0, P1]           # qué lleva detalle: prioridades, `L`, `a_definir`, o `todos`. Con 3 ítems o menos, todos llevan detalle
+  # idioma: es                  # idioma del backlog, de Lo más importante, de Decisiones y del mensaje al canal; por defecto, es
 
 entornos:                       # solo para chequeos GET de solo lectura sin sesión; nunca connection strings, keys ni tokens
   prod: ""                      # URL base de la app en producción; también para nombrarla en el backlog
@@ -108,3 +127,11 @@ entornos:                       # solo para chequeos GET de solo lectura sin ses
   #     url: ""                 # si no está en el repo, el setup la pregunta o la deja vacía con nota
   #   - nombre: auth
   #     url: ""                 # endpoint público de configuración del proveedor de auth
+
+# seguridad:                    # opcional; repos o trackers públicos
+#   canal: ""                   # dónde van los ítems de seguridad: reporte privado de vulnerabilidades, issue confidencial o lo que diga SECURITY.md; sin mails de personas
+# versiones:                    # opcional; apps con versiones viejas en uso (mobile, escritorio)
+#   minima_soportada: ""        # obsoleto solo si tampoco existe en esta versión ni en la reportada
+# planificacion:                # opcional; propuesta de sprint (adaptaciones, sección 12)
+#   capacidad_dias: 20          # días-persona disponibles en el sprint; también se puede dar en el chat
+#   margen: 0.2                 # fracción que se reserva para imprevistos: se planifica hasta capacidad × (1 − margen)

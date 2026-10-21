@@ -46,7 +46,8 @@ Sirve para evaluar el formato y el razonamiento esperado. No es evidencia de inc
 ## Qué necesitás
 
 - **Claude Code**, con acceso autorizado al código del proyecto. Esta es una skill de instrucciones y plantillas, no una aplicación ni un servicio alojado.
-- **GitHub CLI (`gh`)** con acceso de lectura para el triage, y de escritura en issues y labels (y en PRs si se mergea) para `/triage-backlog aplicar`. En Windows, los comandos de la skill están pensados para Git Bash; si usás PowerShell 5.1, la nota al inicio de [comandos.md](triage-backlog/references/comandos.md) dice qué cambiar.
+- **GitHub CLI (`gh`)**, si el código o el tracker están en GitHub, con acceso de lectura para el triage, y de escritura en issues y labels (y en PRs si se mergea) para `/triage-backlog aplicar`. En Windows, los comandos de la skill están pensados para Git Bash; si usás PowerShell 5.1, la nota al inicio de [comandos.md](triage-backlog/references/comandos.md) dice qué cambiar.
+- Para GitLab: `glab` o la API, con un token de solo lectura (`read_api`) en la variable de entorno `GITLAB_TOKEN`, nunca en el chat ni en la config. El de escritura se carga recién para `/triage-backlog aplicar`.
 - Para Jira, Linear, Slack o Teams: el conector disponible en tu agente o un export de los reportes. También podés pegar el texto en el chat.
 
 ## Instalación
@@ -89,12 +90,16 @@ Después:
 /triage-backlog
 ```
 
+Sin config, si pegás 1 a 3 reportes o hay apuro (incidente, release), corre en modo rápido: todo va al chat, sin archivos, y al final te ofrece el setup. Para una corrida programada, la skill no pregunta ni aplica nada: deja el backlog y el mensaje como borrador.
+
 Podés pedir, por ejemplo:
 
 - «revisá el backlog y decime qué ya está resuelto»;
 - «relevá los bugs y pedidos abiertos y proponé prioridades»;
 - «analizá este bug: <reporte pegado>»;
 - «qué implica esta feature y dónde entraría: <pedido>».
+
+¿Un bug suelto en un proyecto chico, Jira, Linear o GitLab, sin acceso al código, un canal de soporte, open source, cientos de issues, un release o incidente, una app móvil, un diagnóstico para cotizar, un equipo en otro idioma o una planificación de sprint? Lo que cambia en cada caso está en [adaptaciones.md](triage-backlog/references/adaptaciones.md).
 
 El backlog deja constancia de la rama y el commit revisados, de las otras ramas desplegadas que verificó (`ramas_extra`, por ejemplo una `release/*` que recibe backports) y de los chequeos GET a producción. Si hay más ítems que `limites.max_items_por_corrida` (60 por defecto, con un 10 % de margen), el setup propone subir el tope, acotar las labels de la fuente o partir en tandas con un criterio estable que queda escrito en `trabajo/tandas-<fecha>.json`, no en la memoria del chat. Antes de crear tickets, aplicar labels o cerrar issues, la persona a cargo decide por ítem en la tabla **Decisiones** del backlog, y después:
 
@@ -110,10 +115,11 @@ Muestra la lista exacta de acciones y las aplica con tu OK en el chat. Las revis
 | --- | --- |
 | [Skill](triage-backlog/SKILL.md) | Setup, análisis, evidencia, prioridades y aprobación. |
 | [Plantilla de configuración](triage-backlog/config-template.yml) | Adaptación a fuentes, repos, tracker y reglas de cada equipo. |
-| [Ejemplos de configuración](triage-backlog/config-examples.md) | Monorepo y front/back separados. |
+| [Ejemplos de configuración](triage-backlog/config-examples.md) | Monorepo, front/back separados, repo único sin entornos y tickets en Jira. |
 | [Plantilla de backlog](triage-backlog/backlog-template.md) | Entregable esperado y decisiones que quedan para el equipo. |
 | [Brief de los lotes](triage-backlog/references/brief-subagente.md) | Prompt fijo de los agentes de solo lectura que revisan el código. |
-| [Comandos](triage-backlog/references/comandos.md) | Los comandos de `gh` y git que usa la skill. |
+| [Comandos](triage-backlog/references/comandos.md) | Los comandos de `gh`, git y `glab`, y las equivalencias para Jira y Linear. |
+| [Adaptaciones](triage-backlog/references/adaptaciones.md) | Qué cambia con un bug suelto, sin código, canal de soporte, Jira, Linear, GitLab, open source, backlog gigante, release o incidente, mobile, diagnóstico, equipo en otro idioma o planificación de sprint. |
 | [Ejemplo ficticio](triage-backlog/references/ejemplo-backlog.md) | Una salida completa que se puede leer sin instalar nada. |
 
 ## Alcance y límites
